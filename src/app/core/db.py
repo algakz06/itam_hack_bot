@@ -36,5 +36,6 @@ def init_db() -> sessionmaker:
         else:
             connected = True
             log.info("initialized db")
+            Base.metadata.create_all(engine)
             session = sessionmaker(engine)
             return session
