@@ -12,7 +12,7 @@ router = Router()
 
 
 @router.message(CommandStart())
-async def start(message: types.Message, session: Session, state: FSMContext) -> None):
+async def start(message: types.Message, session: Session, state: FSMContext) -> None:
     user = crud.get_user(session, message.from_user.id)
 
     if user:
