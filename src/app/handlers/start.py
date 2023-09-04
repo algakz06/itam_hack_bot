@@ -56,21 +56,29 @@ async def get_team(message: types.Message, state: FSMContext) -> None:
 @router.message(TeamBuild.team_name)
 async def get_team_name(message: types.Message, state: FSMContext) -> None:
     await state.set_data({'team_name': message.text})
-    await message.answer("Теперь поочереди в одном сообщении введи ФИО членов команды, каждый в одном сообщении")
+    await message.answer("Теперь поочереди в одном сообщении введи ФИО членов команды, каждый в одном сообщении, как только закончил введи команду /stop")
     await state.set_state(TeamBuild.team_member)
 
 
 @router.message(TeamBuild.team_member)
 async def get_team_member(message: types.Message, state: FSMContext) -> None:
-    ...
+    data = state.get_data()
+    team = data.get('team_name', [])
+    if (len(team) < 3 and data['track'] == 1) or (len(team) < 5 and data['track'] == 2):
+        team.append(message.text)
+    else:
+        await message.answer('Перебор команды, введи /cancel, придется начать заново')
+
 
 
 @router.message(NoTeam.name)
 async def get_member_name(message: types.Message, state: FSMContext) -> None:
-    ...
+    await state.set_data({'name': message.text})
+    await message.answer('Введи свою академическую группу')
     await state.set_state(NoTeam.group)
 
 
 @router.message(NoTeam.group)
 async def get_member_group(message: types.Message, state: FSMContext) -> None:
-    ...
+    await state.set_data({'group': message.text})
+    await message.answer('Спасибо за регистрацию')
