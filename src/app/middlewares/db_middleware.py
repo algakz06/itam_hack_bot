@@ -2,13 +2,14 @@ from typing import Callable, Awaitable, Dict, Any
 
 from aiogram import BaseMiddleware
 from aiogram.types.base import TelegramObject
-from sqlalchemy.orm import sessionmaker
+
+from app.core.db import DBManager
 
 
 class DbSessionMiddleware(BaseMiddleware):
-    def __init__(self, session_pool: sessionmaker):
+    def __init__(self, db: DBManager):
         super().__init__()
-        self.session_pool = session_pool
+        self.db = db
 
     async def __call__(
             self,
@@ -16,6 +17,5 @@ class DbSessionMiddleware(BaseMiddleware):
             event: TelegramObject,
             data: Dict[str, Any],
     ) -> Any:
-        with self.session_pool.begin() as session:
-            data["session"] = session
-            return await handler(event, data)
+        data["db"] = self.db
+        return await handler(event, data)

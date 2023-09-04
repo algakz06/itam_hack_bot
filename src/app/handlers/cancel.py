@@ -3,7 +3,6 @@ from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 
 from app.utils.render_templates import render_template
-from app.core import crud
 
 
 router = Router()

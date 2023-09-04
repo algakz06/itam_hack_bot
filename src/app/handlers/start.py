@@ -1,21 +1,20 @@
-from aiogram import types, Router
-from aiogram.filters import CommandStart
+from aiogram import types, F, Router
+from aiogram.filters import CommandStart, Command
 from aiogram.fsm.context import FSMContext
 from sqlalchemy.orm import Session
-from app import keyboards
 
+from app.core.db import DBManager
 from app.models.states import Registarion, TeamBuild, NoTeam
 from app.utils.render_templates import render_template
 from app.keyboards import reply_keyboards
-from app.core import crud
 
 
 router = Router()
 
 
 @router.message(CommandStart())
-async def start(message: types.Message, session: Session, state: FSMContext) -> None:
-    user = crud.get_user(session, message.from_user.id)
+async def start(message: types.Message, db: DBManager, state: FSMContext) -> None:
+    user = db.get_user(message.from_user.id)
 
     if user:
         await message.answer("Вы уже зарегистрированы")
@@ -25,8 +24,6 @@ async def start(message: types.Message, session: Session, state: FSMContext) -> 
 
     keyboard = reply_keyboards.get_start_keyboard()
     await message.answer(answer, reply_markup=keyboard)
-
-    crud.add_user_to_db(session, message.from_user.id)
 
     await state.set_state(Registarion.track)
 
@@ -39,14 +36,14 @@ async def get_track(message: types.Message, state: FSMContext) -> None:
         await state.set_data({"track": 2})
     await message.answer("Есть ли у тебя команда?", reply_markup=reply_keyboards.get_team_keyboard())
 
-    await Registarion.next()
+    await state.set_state(Registarion.team)
 
 
 @router.message(Registarion.team)
 async def get_team(message: types.Message, state: FSMContext) -> None:
     if message.text == "Есть команда":
         await message.answer("Отлично! Введи название команды")
-        await state.set_data(TeamBuild.team_name)
+        await state.set_state(TeamBuild.team_name)
     elif message.text == "Нет команды":
         await message.answer("Ничего страшного, мы разберемся")
         await message.answer("Напиши свое ФИО")
@@ -55,30 +52,67 @@ async def get_team(message: types.Message, state: FSMContext) -> None:
 
 @router.message(TeamBuild.team_name)
 async def get_team_name(message: types.Message, state: FSMContext) -> None:
-    await state.set_data({'team_name': message.text})
+    data = await state.get_data()
+    data['team_name'] = message.text
+    await state.set_data(data)
     await message.answer("Теперь поочереди в одном сообщении введи ФИО членов команды, каждый в одном сообщении, как только закончил введи команду /stop")
     await state.set_state(TeamBuild.team_member)
 
 
+@router.message(TeamBuild.team_member, Command('stop'))
+async def stop_accepting_team_members(message: types.Message, state: FSMContext, db: DBManager):
+    data = await state.get_data()
+    team_name = data.get('team_name', '')
+    team = data.get('team')
+
+    db.create_team(
+        team_name=team_name,
+    )
+
+    team_in_db = db.get_team(team_name)
+
+    for member in team:
+        db.create_user(
+            tg_user_id=message.from_user.id,
+            telegram_name=message.from_user.username,
+            team=team_in_db.id,
+            track=data['track'],
+            user_name=member,
+            )
+
 @router.message(TeamBuild.team_member)
 async def get_team_member(message: types.Message, state: FSMContext) -> None:
-    data = state.get_data()
-    team = data.get('team_name', [])
+    data = await state.get_data()
+    team = data.get('team', [])
     if (len(team) < 3 and data['track'] == 1) or (len(team) < 5 and data['track'] == 2):
         team.append(message.text)
+        data['team'] = team
+        await state.set_data(data)
+        await message.answer('Записал давай дальше')
     else:
         await message.answer('Перебор команды, введи /cancel, придется начать заново')
 
-
-
 @router.message(NoTeam.name)
 async def get_member_name(message: types.Message, state: FSMContext) -> None:
-    await state.set_data({'name': message.text})
+    data = await state.get_data()
+    data['name'] = message.text
+    await state.set_data(data)
     await message.answer('Введи свою академическую группу')
     await state.set_state(NoTeam.group)
 
 
 @router.message(NoTeam.group)
-async def get_member_group(message: types.Message, state: FSMContext) -> None:
-    await state.set_data({'group': message.text})
+async def get_member_group(message: types.Message, db: DBManager, state: FSMContext) -> None:
+    data = await state.get_data()
+    data['group'] = message.text
+    await state.set_data(data)
     await message.answer('Спасибо за регистрацию')
+
+    data = await state.get_data()
+    db.create_user(
+        tg_user_id=message.from_user.id,
+        telegram_name=message.from_user.username,
+        track=data['track'],
+        user_name=data['name'],
+        university_group=data['group'],
+        )

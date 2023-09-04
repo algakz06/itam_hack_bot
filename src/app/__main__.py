@@ -8,11 +8,14 @@ from sqlalchemy.orm import sessionmaker
 
 # region local imports
 from app.config import settings
+from app.config import log
 from app.middlewares.db_middleware import DbSessionMiddleware
-from app.core.db import init_db
+from app.core.db import DBManager
 
 # region routers
 from app.handlers.start import router as start_router
+from app.handlers.admin import router as admin_router
+from app.handlers.cancel import router as cancel_router
 
 # endregion
 
@@ -23,25 +26,28 @@ def setup_handlers(dp: Dispatcher):
     Setup all handlers
     """
     dp.include_router(start_router)
+    dp.include_router(admin_router)
+    dp.include_router(cancel_router)
 
 
-def setup_middlewares(session: sessionmaker):
+def setup_middlewares(db: DBManager):
     """
     Setup middlewares
     """
-    start_router.message.middleware(DbSessionMiddleware(session))
+    start_router.message.middleware(DbSessionMiddleware(db))
+    admin_router.message.middleware(DbSessionMiddleware(db))
 
 
 async def main():
     """Initialize bot and dispatcher"""
-    bot = Bot(token=settings.TG_TOKEN, parse_mode="HTML")
+    bot = Bot(token=settings.TG_TOKEN, parse_mode="Markdown")
     dp = Dispatcher()
 
     """Initialize database"""
-    session = init_db()
+    db = DBManager(log)
 
     """Setup middlewares"""
-    setup_middlewares(session)
+    setup_middlewares(db)
 
     """Setup handlers"""
     setup_handlers(dp)

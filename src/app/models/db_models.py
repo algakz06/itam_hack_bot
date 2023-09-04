@@ -8,9 +8,11 @@ Base = declarative_base()
 class User(Base):
     """User model for SQLAlchemy"""
     __tablename__ = 'users'
-    telegram_id = Column(BigInteger, primary_key=True)
+    id = Column(Integer, primary_key=True)
+    telegram_id = Column(BigInteger)
     telegram_name = Column(String)
     track = Column(Integer)
+    university_group = Column(String)
     user_name = Column(String)
     timestamp = Column(DateTime, default=datetime.now())
     team = Column(Integer, ForeignKey('teams.id'))
@@ -24,7 +26,6 @@ class Team(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String)
     timestamp = Column(DateTime, default=datetime.now())
-    users = relationship('User', backref='team')
 
     def __repr__(self) -> str:
         return f"Team {self.name} with id {self.id}"
