@@ -14,3 +14,8 @@ class NoTeam(StatesGroup):
 class TeamBuild(StatesGroup):
     team_name = State()
     team_member = State()
+
+
+class Broadcast(StatesGroup):
+    track = State()
+    message = State()
