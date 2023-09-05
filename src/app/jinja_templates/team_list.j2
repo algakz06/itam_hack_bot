@@ -1,0 +1,6 @@
+<b>{{teamname}}</b><br>
+<br>
+{% for member in team_members %}
+    {{loop.index}}.
+    {{member.user_name}}, @{{member.telegram_name}}<br>
+{% endfor %}

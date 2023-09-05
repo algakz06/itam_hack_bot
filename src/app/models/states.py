@@ -9,6 +9,7 @@ class Registarion(StatesGroup):
 class NoTeam(StatesGroup):
     name = State()
     group = State()
+    specialty = State()
 
 
 class TeamBuild(StatesGroup):

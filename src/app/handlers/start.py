@@ -46,7 +46,7 @@ async def get_team(message: types.Message, state: FSMContext) -> None:
         await state.set_state(TeamBuild.team_name)
     elif message.text == "Нет команды":
         await message.answer("Ничего страшного, мы разберемся")
-        await message.answer("Напиши свое ФИО")
+        await message.answer("Напиши свое ФИО", reply_markup=None)
         await state.set_state(NoTeam.name)
 
 
@@ -64,6 +64,9 @@ async def stop_accepting_team_members(message: types.Message, state: FSMContext,
     data = await state.get_data()
     team_name = data.get('team_name', '')
     team = data.get('team')
+    if len(team) < 2:
+        await message.answer('Кажется ты где-то ошибся, введи /cancel и начни заново')
+        return
 
     db.create_team(
         team_name=team_name,
@@ -80,6 +83,9 @@ async def stop_accepting_team_members(message: types.Message, state: FSMContext,
             user_name=member,
             )
 
+    await message.answer('Спасибо за регистрацию')
+    await state.clear()
+
 @router.message(TeamBuild.team_member)
 async def get_team_member(message: types.Message, state: FSMContext) -> None:
     data = await state.get_data()
@@ -88,9 +94,10 @@ async def get_team_member(message: types.Message, state: FSMContext) -> None:
         team.append(message.text)
         data['team'] = team
         await state.set_data(data)
-        await message.answer('Записал давай дальше')
+        await message.answer(f'Записал давай дальше, если закончил введи /stop, в команде человек {len(team)} из {3 if data["track"] == 1 else 5}')
     else:
-        await message.answer('Перебор команды, введи /cancel, придется начать заново')
+        await message.answer('Перебор команды, введи /cancel, придется начать заново, введи /start')
+        await state.clear()
 
 @router.message(NoTeam.name)
 async def get_member_name(message: types.Message, state: FSMContext) -> None:
@@ -106,8 +113,29 @@ async def get_member_group(message: types.Message, db: DBManager, state: FSMCont
     data = await state.get_data()
     data['group'] = message.text
     await state.set_data(data)
-    await message.answer('Спасибо за регистрацию')
 
+    data = await state.get_data()
+
+    if data['track'] == 1:
+        await message.answer('Спасибо за регистрацию')
+        db.create_user(
+            tg_user_id=message.from_user.id,
+            telegram_name=message.from_user.username,
+            track=data['track'],
+            user_name=data['name'],
+            university_group=data['group'],
+            )
+        await state.clear()
+    else:
+        await message.answer(
+            'Выбери свою специальность, например Frontend разработчик',
+            reply_markup=reply_keyboards.get_specialty_keyboard()
+            )
+        await state.set_state(NoTeam.specialty)
+
+
+@router.message(NoTeam.specialty)
+async def get_member_specialty(message: types.Message, db: DBManager, state: FSMContext) -> None:
     data = await state.get_data()
     db.create_user(
         tg_user_id=message.from_user.id,
@@ -115,4 +143,7 @@ async def get_member_group(message: types.Message, db: DBManager, state: FSMCont
         track=data['track'],
         user_name=data['name'],
         university_group=data['group'],
+        specialty=message.text,
         )
+    await message.answer('Спасибо за регистрацию', reply_markup=None)
+    await state.clear()

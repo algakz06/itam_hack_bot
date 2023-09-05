@@ -10,7 +10,7 @@ def get_start_keyboard() -> types.ReplyKeyboardMarkup:
             types.KeyboardButton(text="Б2"),
         ],
     ]
-    return types.ReplyKeyboardMarkup(keyboard=markup, resize_keyboard=True)
+    return types.ReplyKeyboardMarkup(keyboard=markup, resize_keyboard=True, one_time_keyboard=True)
 
 def get_team_keyboard() -> types.ReplyKeyboardMarkup:
     markup = [
@@ -21,4 +21,22 @@ def get_team_keyboard() -> types.ReplyKeyboardMarkup:
             types.KeyboardButton(text="Нет команды"),
         ],
     ]
-    return types.ReplyKeyboardMarkup(keyboard=markup, resize_keyboard=True)
+    return types.ReplyKeyboardMarkup(keyboard=markup, resize_keyboard=True, one_time_keyboard=True)
+
+
+def get_specialty_keyboard() -> types.ReplyKeyboardMarkup:
+    markup = [
+        [
+            types.KeyboardButton(text="Frontend"),
+            types.KeyboardButton(text="Backend"),
+        ],
+        [
+            types.KeyboardButton(text="Fullstack"),
+            types.KeyboardButton(text="Дизайнер"),
+        ],
+        [
+            types.KeyboardButton(text="ML/DS/AI"),
+            types.KeyboardButton(text="Не знаю"),
+        ]
+    ]
+    return types.ReplyKeyboardMarkup(keyboard=markup, resize_keyboard=True, one_time_keyboard=True)

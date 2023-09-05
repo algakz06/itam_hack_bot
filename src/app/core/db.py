@@ -1,6 +1,4 @@
-import time
-
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, func, join
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.exc import OperationalError as sqlalchemyOpError
@@ -10,8 +8,6 @@ from app.config import settings
 from app.models.db_models import Base
 from app.models import db_models
 
-from datetime import date, datetime, timedelta
-from os import getenv
 from time import sleep
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
@@ -87,6 +83,7 @@ class DBManager:
         user_name: str,
         team: Optional[str] = None,
         university_group: Optional[str] = None,
+        specialty: Optional[str] = None,
         ):
         """Creating user after command /start in db"""
         db_user = db_models.User(
@@ -94,6 +91,7 @@ class DBManager:
             telegram_name=telegram_name,
             team=team,
             track=track,
+            specialty=specialty,
             user_name=user_name,
             university_group=university_group,
             )
@@ -147,6 +145,61 @@ class DBManager:
             return None
         self.log.info(f"Team {team} was found in db")
         return team
+
+    def get_b1_users_without_teams(self):
+        users = self.session.query(db_models.User).filter(
+            db_models.User.team == None,
+            db_models.User.track == 1
+            ).all()
+        return users
+
+    def get_b2_users_without_teams(self):
+        users = self.session.query(db_models.User).filter(
+            db_models.User.team == None,
+            db_models.User.track == 2
+            ).all()
+        return users
+
+    def get_all_teams_with_members(self):
+        # Execute the query to retrieve the team name and a list of team members
+
+        result = self.session.query(
+            db_models.Team.name,
+            db_models.Team.id,
+        ).all()
+
+        # Format the results as a list of dictionaries
+        team_info = [
+            {'team_name': row.name, 'team_members': self._get_team_members(row.id)}
+            for row in result
+        ]
+
+        return team_info
+
+    def _get_team_members(self, team_id: int):
+        members = self.session.query(db_models.User).filter(
+            db_models.User.team == team_id
+            ).all()
+        return members
+
+    def get_not_full_teams_b1(self):
+        # Execute the query to retrieve the team name and a list of team members
+        join_query = join(db_models.User, db_models.Team, db_models.User.team == db_models.Team.id)
+
+        result = self.session.query(
+            db_models.Team.name,
+            func.array_agg(db_models.User.user_name).label('team_members')
+        ).select_from(join_query).group_by(db_models.Team.name).all()
+
+        # Format the results as a list of dictionaries
+        team_info = [
+            {'team_name': row.name, 'team_members': row.team_members}
+            for row in result
+            if len(row.team_members) < 3
+        ]
+
+        return team_info
+
     # endregion
 
     # endregion

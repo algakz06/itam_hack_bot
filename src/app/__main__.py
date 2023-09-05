@@ -25,9 +25,9 @@ def setup_handlers(dp: Dispatcher):
     """
     Setup all handlers
     """
+    dp.include_router(cancel_router)
     dp.include_router(start_router)
     dp.include_router(admin_router)
-    dp.include_router(cancel_router)
 
 
 def setup_middlewares(db: DBManager):
@@ -40,7 +40,7 @@ def setup_middlewares(db: DBManager):
 
 async def main():
     """Initialize bot and dispatcher"""
-    bot = Bot(token=settings.TG_TOKEN, parse_mode="Markdown")
+    bot = Bot(token=settings.TG_TOKEN, parse_mode="HTML")
     dp = Dispatcher()
 
     """Initialize database"""

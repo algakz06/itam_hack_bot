@@ -12,6 +12,7 @@ class User(Base):
     telegram_id = Column(BigInteger)
     telegram_name = Column(String)
     track = Column(Integer)
+    specialty = Column(String)
     university_group = Column(String)
     user_name = Column(String)
     timestamp = Column(DateTime, default=datetime.now())
