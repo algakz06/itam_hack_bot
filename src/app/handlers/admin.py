@@ -50,20 +50,24 @@ async def shuffle_teams(message: types.Message, db: DBManager):
     "Разработка-МИСИС",
     "Техногенная-МИСИС",
     "Компьютерная-Команда-МИСИС",
-    "МИСИС-Техники"
+    "МИСИС-Техники",
+    "МИСИСики",
+    "МИСИС и команда"
     ]
 
-    users: list = db.get_b1_users_without_teams()
-    random.shuffle(users)
+    users_online: list = db.get_b1_users_without_teams_online()
+    users_offline: list = db.get_b1_users_without_teams_offline()
+    random.shuffle(users_online)
+    random.shuffle(users_offline)
 
     not_full_teams = db.get_not_full_teams_b1()
 
     for team in not_full_teams:
-        member = users.pop()
+        member = users_offline.pop()
         db.add_user_to_team(member.telegram_id, team['team_name'])
 
     team_members = []
-    for user in users:
+    for user in users_offline:
         if len(team_members) == 3:
             db.create_team(random_team_names[-1])
             team = db.get_team(random_team_names.pop())
@@ -72,11 +76,30 @@ async def shuffle_teams(message: types.Message, db: DBManager):
             team_members = []
         team_members.append(user)
     else:
-        db.create_team(random_team_names[-1])
-        team = db.get_team(random_team_names.pop())
-        for member in team_members:
-            db.add_user_to_team(member.telegram_id, team.name)
-        team_members = []
+        if team_members:
+            if len(team_members) == 2:
+                team_members.append(users_online.pop())
+            db.create_team(random_team_names[-1])
+            team = db.get_team(random_team_names.pop())
+            for member in team_members:
+                db.add_user_to_team(member.telegram_id, team.name)
+            team_members = []
+
+    for user in users_online:
+        if len(team_members) == 3:
+            db.create_team(random_team_names[-1])
+            team = db.get_team(random_team_names.pop())
+            for member in team_members:
+                db.add_user_to_team(member.telegram_id, team.name)
+            team_members = []
+        team_members.append(user)
+    else:
+        if team_members:
+            db.create_team(random_team_names[-1])
+            team = db.get_team(random_team_names.pop())
+            for member in team_members:
+                db.add_user_to_team(member.telegram_id, team.name)
+            team_members = []
 
     await message.answer('Команды перемешаны')
 

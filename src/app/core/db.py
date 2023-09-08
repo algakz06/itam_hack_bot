@@ -80,6 +80,7 @@ class DBManager:
         tg_user_id: int,
         telegram_name: str,
         track: int,
+        type_of_presense: str,
         user_name: str,
         team: Optional[str] = None,
         university_group: Optional[str] = None,
@@ -90,6 +91,7 @@ class DBManager:
             telegram_id=tg_user_id,
             telegram_name=telegram_name,
             team=team,
+            type_of_presense=type_of_presense,
             track=track,
             specialty=specialty,
             user_name=user_name,
@@ -146,10 +148,19 @@ class DBManager:
         self.log.info(f"Team {team} was found in db")
         return team
 
-    def get_b1_users_without_teams(self):
+    def get_b1_users_without_teams_online(self):
         users = self.session.query(db_models.User).filter(
             db_models.User.team == None,
-            db_models.User.track == 1
+            db_models.User.track == 1,
+            db_models.User.type_of_presense == 'Онлайн'
+            ).all()
+        return users
+
+    def get_b1_users_without_teams_offline(self):
+        users = self.session.query(db_models.User).filter(
+            db_models.User.team == None,
+            db_models.User.track == 1,
+            db_models.User.type_of_presense == 'Очно'
             ).all()
         return users
 

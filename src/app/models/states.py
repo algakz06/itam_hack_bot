@@ -2,6 +2,7 @@ from aiogram.fsm.state import StatesGroup, State
 
 
 class Registarion(StatesGroup):
+    type_of_presense = State()
     track = State()
     team = State()
 
