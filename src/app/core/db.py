@@ -211,6 +211,12 @@ class DBManager:
 
         return team_info
 
+    def get_users_without_tg_name(self):
+        users = self.session.query(db_models.User).filter(
+            db_models.User.telegram_name == None
+            ).all()
+        return users
+
     # endregion
 
     # endregion

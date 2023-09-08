@@ -112,6 +112,12 @@ async def get_b2_members_without_team(message: types.Message, db: DBManager):
         reply_message += f'{user.user_name}, {user.university_group}, {user.specialty}, {user.telegram_name}\n\n'
     await message.answer(reply_message)
 
+@router.message(Command('broadcast_nonames'), F.from_user.id == settings.TG_ADMIN_ID)
+async def broadcast(message: types.Message, db: DBManager):
+    users: list[db_models.User] = db.get_users_without_tg_name()
+    for user in users:
+        await message.bot.send_message(user.telegram_id, "Привет, у тебя не указано имя пользователя в телеграме, пожалуйста, напиши мне, @KindArthas")
+    await message.answer('Рассылка завершена')
 
 @router.message(Command('get_teams'), F.from_user.id == settings.TG_ADMIN_ID)
 async def get_teams(message: types.Message, db: DBManager):
