@@ -217,6 +217,28 @@ class DBManager:
             ).all()
         return users
 
+    def get_all_teams_with_members_b1(self):
+        # Execute the query to retrieve the team name and a list of team members
+
+        result = self.session.query(
+            db_models.Team.name,
+            db_models.Team.id,
+        ).all()
+
+        # Format the results as a list of dictionaries
+        team_info = [
+            {'team_name': row.name, 'team_members': self._get_team_members(row.id)}
+            for row in result
+        ]
+        team_info = [
+            team
+            for team in team_info
+            if team['team_members'][0].track == 1
+        ]
+
+        return team_info
+
+
     # endregion
 
     # endregion

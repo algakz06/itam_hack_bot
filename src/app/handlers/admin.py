@@ -128,3 +128,14 @@ async def get_teams(message: types.Message, db: DBManager):
             'team_members': team['team_members'],
         })
         await message.answer(reply_message)
+
+
+@router.message(Command('get_b1_teams'), F.from_user.id == settings.TG_ADMIN_ID)
+async def get_b1_teams(message: types.Message, db: DBManager):
+    teams = db.get_all_teams_with_members_b1()
+    for team in teams:
+        reply_message = render_template('team_list.j2', {
+            'teamname': team['team_name'],
+            'team_members': team['team_members'],
+        })
+        await message.answer(reply_message)
